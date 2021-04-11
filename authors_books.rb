@@ -2,31 +2,29 @@ require 'sinatra'
 require 'pg'
 
 set :bind, '0.0.0.0'
-set :port,3000 
+set :port, 3000 
 
-conection = PG.connect dbname: 'test', user: 'postgres', password: 'qwerty'
+connection = PG::connect(dbname: 'test', user: 'postgres', password: 'qwerty')
 
 get '/' do
-  @authors = conection.exec 'SELECT * FROM authors'
+  @authors = connection.exec('SELECT * FROM authors')
 
   erb :index
 end
 
 get '/authors/:id' do
-  @author = conection.exec("SELECT authors.* FROM authors WHERE authors.id = #{params[:id]}").first
-  @books = conection.exec "SELECT books.* FROM books
+  @author = connection.exec_params("SELECT authors.* FROM authors WHERE authors.id = $1::int", params[:id]).first
+  @books = connection.exec_params("SELECT books.* FROM books
   JOIN authors_books ON books.id = authors_books.book_id
-  WHERE authors_books.author_id = #{params[:id]}"
+  WHERE authors_books.author_id = $1::int", params[:id])
 
   erb :author
 end
 
 get '/books/:id' do
-  @author = conection.exec("SELECT authors.* FROM authors WHERE authors.id = #{params[:id]}").first
-  @book = conection.exec("SELECT books.* FROM books WHERE books.id = #{params[:id]}").first
-  @screen_adaptations = conection.exec "SELECT screen_adaptations.* FROM screen_adaptations
-  WHERE screen_adaptations.book_id = #{params[:id]}"
+  @book = connection.exec_params("SELECT books.* FROM books WHERE books.id = $1::int", params[:id]).first
+  @screen_adaptations = connection.exec_params("SELECT screen_adaptations.* FROM screen_adaptations
+  WHERE screen_adaptations.book_id = $1::int", params[:id])
 
   erb :book
 end
-
